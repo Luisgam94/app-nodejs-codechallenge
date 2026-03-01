@@ -27,7 +27,7 @@
 ### Servicio de Transacciones (Transaction)
 **Produce a**: `anti-fraud-topic`
 - Datos de transacción recién creada (estado: `PENDING`)
-- Trigger: Inmediatamente después de persistir
+- Inmediatamente después de persistir envia el mensaje a Kafka para validación
 
 **Consume de**: `transaction-topic`
 - Estado final de validación (`APPROVED` / `REJECTED`)
@@ -40,12 +40,15 @@
 
 **Produce a**: `transaction-topic`
 - Resultado de validación con ID de transacción y nuevo estado
+- Después de procesar cada mensaje, envía el resultado a Kafka para que Transaction actualice su estado
 
 ---
 
 ## 🚀 Cómo Ejecutar
 
-### MODO LOCAL ⭐ (Recomendado)
+Se tiene 2 modos de ejecución: Local (Infraestructura con docker y microservicios corriendo en tu máquina) o Automatizado (con todo el sistema dockerizado).
+
+### 💻 MODO LOCAL
 
 #### 1. Levantar infraestructura
 ```powershell
@@ -106,7 +109,7 @@ cd transaction
 
 ---
 
-### MODO AUTOMATIZADO (Docker Completo)
+### 🐳 MODO AUTOMATIZADO (Docker Completo)
 
 #### Levantar todo el sistema
 ```powershell
