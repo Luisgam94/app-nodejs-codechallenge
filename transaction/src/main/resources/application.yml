@@ -1,16 +1,20 @@
 spring:
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
-      group-id: transaction-group-id
+      group-id: ${SPRING_KAFKA_CONSUMER_GROUP_ID:transaction-group-id}
     topics:
-      anti-fraud: anti-fraud-topic
-      transaction: transaction-topic
+      anti-fraud: ${KAFKA_TOPIC_ANTIFRAUD:anti-fraud-topic}
+      transaction: ${KAFKA_TOPIC_TRANSACTION:transaction-topic}
+
+  sql:
+    init:
+      mode: always
 
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/postgres?schema=public
-    username: postgres
-    password: postgres
+    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://localhost:5432/postgres?schema=public}
+    username: ${SPRING_R2DBC_USERNAME:postgres}
+    password: ${SPRING_R2DBC_PASSWORD:postgres}
     pool:
       initial-size: 10
       max-size: 50

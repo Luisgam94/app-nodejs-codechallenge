@@ -1,82 +1,138 @@
-# Yape Code Challenge :rocket:
+# Solución Técnica - Sistema de Transacciones con Anti-Fraude
 
-Our code challenge will let you marvel us with your Jedi coding skills :smile:. 
 
-Don't forget that the proper way to submit your work is to fork the repo and create a PR :wink: ... have fun !!
+## 📋 Stack Tecnológico
 
-- [Problem](#problem)
-- [Tech Stack](#tech_stack)
-- [Send us your challenge](#send_us_your_challenge)
+- **Java 17** - Lenguaje base
+- **Spring Boot 3.5.11** - Framework principal
+- **Spring WebFlux** - Programación reactiva no bloqueante
+- **R2DBC** - Operaciones reactivas con base de datos
+- **Apache Kafka** - Mensajería asíncrona
+- **PostgreSQL** - Base de datos persistente
 
-# Problem
+---
 
-Every time a financial transaction is created it must be validated by our anti-fraud microservice and then the same service sends a message back to update the transaction status.
-For now, we have only three transaction statuses:
+## 🏗️ Arquitectura
 
-<ol>
-  <li>pending</li>
-  <li>approved</li>
-  <li>rejected</li>  
-</ol>
+### Gestión de Concurrencia
+- **Bloqueo Optimista**: Maneja actualizaciones concurrentes sin bloquear lecturas
+- **Control de Duplicados**: Prevención de transacciones duplicadas
 
-Every transaction with a value greater than 1000 should be rejected.
+### Tipos de Transacción
+- `1` = Depósito
+- `2` = Retiro
 
-```mermaid
-  flowchart LR
-    Transaction -- Save Transaction with pending Status --> transactionDatabase[(Database)]
-    Transaction --Send transaction Created event--> Anti-Fraud
-    Anti-Fraud -- Send transaction Status Approved event--> Transaction
-    Anti-Fraud -- Send transaction Status Rejected event--> Transaction
-    Transaction -- Update transaction Status event--> transactionDatabase[(Database)]
+## 🔄 Flujo de Comunicación
+
+### Servicio de Transacciones (Transaction)
+**Produce a**: `anti-fraud-topic`
+- Datos de transacción recién creada (estado: `PENDING`)
+- Trigger: Inmediatamente después de persistir
+
+**Consume de**: `transaction-topic`
+- Estado final de validación (`APPROVED` / `REJECTED`)
+- Acción: Actualiza estado en base de datos
+
+### Servicio Anti-Fraude (Antifraud)
+**Consume de**: `anti-fraud-topic`
+- Transacción a validar
+- Rechaza transacciones con valor > $1000
+
+**Produce a**: `transaction-topic`
+- Resultado de validación con ID de transacción y nuevo estado
+
+---
+
+## 🚀 Cómo Ejecutar
+
+### MODO LOCAL ⭐ (Recomendado)
+
+#### 1. Levantar infraestructura
+```powershell
+docker-compose -f docker-compose.local.yml up
 ```
 
-# Tech Stack
+**Incluye:**
+- PostgreSQL (puerto 5432)
+- Zookeeper (puerto 2181)
+- Kafka (puerto 9092)
 
-<ol>
-  <li>Node. You can use any framework you want (i.e. Nestjs with an ORM like TypeOrm or Prisma) </li>
-  <li>Any database</li>
-  <li>Kafka</li>    
-</ol>
+#### 2. Ejecutar microservicios desde el IDE
 
-We do provide a `Dockerfile` to help you get started with a dev environment.
+### Requisitos Previos
 
-You must have two resources:
+### Java 17
+Este proyecto requiere **Java 17**. Asegúrate de tener instalado JDK 17 y configurado en tu variable de entorno `JAVA_HOME`.
 
-1. Resource to create a transaction that must containt:
+#### Windows
+```powershell
+# Verificar versión de Java
+java -version
 
-```json
-{
-  "accountExternalIdDebit": "Guid",
-  "accountExternalIdCredit": "Guid",
-  "tranferTypeId": 1,
-  "value": 120
-}
+# Configurar JAVA_HOME (reemplaza la ruta con tu instalación de JDK 17)
+setx JAVA_HOME "C:\Program Files\Java\jdk-17"
+setx PATH "%JAVA_HOME%\bin;%PATH%"
+
+# Reinicia tu terminal para aplicar cambios
 ```
 
-2. Resource to retrieve a transaction
+#### Mac
+```bash
+# Verificar versión de Java
+java -version
 
-```json
-{
-  "transactionExternalId": "Guid",
-  "transactionType": {
-    "name": ""
-  },
-  "transactionStatus": {
-    "name": ""
-  },
-  "value": 120,
-  "createdAt": "Date"
-}
+# Configurar JAVA_HOME en ~/.zshrc o ~/.bash_profile
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+export PATH=$JAVA_HOME/bin:$PATH
+
+# Aplicar cambios
+source ~/.zshrc  # o source ~/.bash_profile
 ```
 
-## Optional
+**Opción A - Terminal:**
+```powershell
+# Terminal 1 - Antifraud
+cd antifraud
+./mvnw spring-boot:run
 
-You can use any approach to store transaction data but you should consider that we may deal with high volume scenarios where we have a huge amount of writes and reads for the same data at the same time. How would you tackle this requirement?
+# Terminal 2 - Transaction
+cd transaction
+./mvnw spring-boot:run
+```
 
-You can use Graphql;
+**Opción B - IntelliJ IDEA:**
+- Click derecho en `AntifraudApplication.java` → Run
+- Click derecho en `TransactionApplication.java` → Run
 
-# Send us your challenge
+---
 
-When you finish your challenge, after forking a repository, you **must** open a pull request to our repository. There are no limitations to the implementation, you can follow the programming paradigm, modularization, and style that you feel is the most appropriate solution.
+### MODO AUTOMATIZADO (Docker Completo)
 
-If you have any questions, please let us know.
+#### Levantar todo el sistema
+```powershell
+docker-compose up --build -d
+```
+
+**Incluye:**
+- PostgreSQL
+- Zookeeper
+- Kafka
+- Antifraud (Dockerizado, puerto 8081)
+- Transaction (Dockerizado, puerto 8080)
+
+#### Detener
+```powershell
+docker-compose down
+```
+
+---
+
+## 📍 Puertos y Servicios
+
+| Servicio | Puerto | URL |
+|----------|--------|-----|
+| Transaction | 8080 | http://localhost:8080 |
+| Antifraud | 8081 | http://localhost:8081 |
+| PostgreSQL | 5432 | localhost:5432 |
+| Kafka | 9092 | localhost:9092 |
+| Zookeeper | 2181 | localhost:2181 |
