@@ -1,5 +1,6 @@
 # Solución Técnica - Sistema de Transacciones con Anti-Fraude
 
+La estructura del proyecto es hexagonal, con dos microservicios principales: `Transaction` y `Antifraud`.
 
 ## 📋 Stack Tecnológico
 
@@ -139,3 +140,59 @@ docker-compose down
 | PostgreSQL | 5432 | localhost:5432 |
 | Kafka | 9092 | localhost:9092 |
 | Zookeeper | 2181 | localhost:2181 |
+
+
+---
+
+## 📮 Pruebas con POSTMAN
+
+### 1️⃣ Crear Transacción
+
+**POST** `http://localhost:8080/transactions`
+
+**Body (JSON):**
+```json
+{
+  "accountExternalIdDebit": "6085462b-f1da-48a0-8f11-72ee428b2a32",
+  "accountExternalIdCredit": "1cb43a09-01a7-4019-b683-589b6b00ea58",
+  "tranferTypeId": 1,
+  "value": 900
+}
+```
+
+**Response (201 CREATED):**
+```json
+{
+  "transactionExternalId": "47f62081-95c7-483b-a000-91c0e391f696"
+}
+```
+
+---
+
+### 2️⃣ Obtener Transacción
+
+**GET** `http://localhost:8080/transactions/{transactionExternalId}`
+
+**Parámetro:**
+- `transactionExternalId`: ID de la transacción a consultar
+
+**Response (200 OK):**
+```json
+{
+  "transactionExternalId": "47f62081-95c7-483b-a000-91c0e391f696",
+  "transactionType": {
+    "name": "DEPOSIT"
+  },
+  "transactionStatus": {
+    "name": "APPROVED"
+  },
+  "value": 900.00,
+  "createdAt": "2026-03-01T19:11:52.070044"
+}
+```
+
+---
+
+### 📌 Notas Importantes
+
+- **tranferTypeId**: `1` = Depósito, `2` = Retiro
