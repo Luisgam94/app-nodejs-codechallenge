@@ -1,6 +1,7 @@
 package com.yape.transaction.infraestructure.adapter.persistence;
 
 import com.yape.transaction.domain.entities.Transaction;
+import com.yape.transaction.domain.enums.TransactionStatus;
 import com.yape.transaction.domain.ports.TransactionRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 @Repository
 @RequiredArgsConstructor
@@ -57,8 +59,15 @@ public class TransactionRepositoryImpl implements TransactionRepositoryPort {
     @Override
     public Mono<Void> updateStatus(String transactionExternalId, String status) {
         return transactionR2dbcRepository.findByTransactionExternalId(transactionExternalId)
+                .filter(transaction -> {
+                    boolean isPending = TransactionStatus.PENDING.getValue().equals(transaction.getStatus());
+                    if (!isPending) logger.warn("Skipping update for transaction {} because its status is '{}', not PENDING",
+                            transactionExternalId, transaction.getStatus());
+                    return isPending;
+                })
                 .flatMap(transaction -> {
                     transaction.setStatus(status);
+                    transaction.setUpdatedAt(LocalDateTime.now());
                     return transactionR2dbcRepository.save(transaction)
                             .retryWhen(Retry.backoff(MAX_RETRIES, RETRY_DELAY)
                                     .filter(ex -> ex instanceof OptimisticLockingFailureException)

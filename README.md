@@ -53,7 +53,7 @@ Se tiene 2 modos de ejecución: Local (Infraestructura con docker y microservici
 
 #### 1. Levantar infraestructura
 ```powershell
-docker-compose -f docker-compose.local.yml up
+docker-compose -f docker-compose.local.yml up -d
 ```
 
 **Incluye:**
